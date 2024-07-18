@@ -36,6 +36,20 @@ func (m *MockInterface) EXPECT() *MockInterfaceMockRecorder {
 	return m.recorder
 }
 
+// MarkMessageAsProcessed mocks base method.
+func (m *MockInterface) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkMessageAsProcessed", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkMessageAsProcessed indicates an expected call of MarkMessageAsProcessed.
+func (mr *MockInterfaceMockRecorder) MarkMessageAsProcessed(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkMessageAsProcessed", reflect.TypeOf((*MockInterface)(nil).MarkMessageAsProcessed), ctx, id)
+}
+
 // ProcessMessage mocks base method.
 func (m *MockInterface) ProcessMessage(ctx context.Context, msg message.Message) (uuid.UUID, error) {
 	m.ctrl.T.Helper()

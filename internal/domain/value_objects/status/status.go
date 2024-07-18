@@ -3,5 +3,6 @@ package status
 type Status string
 
 const (
-	Wait = Status("Waiting")
+	InProcessing = Status("InProcessing")
+	Processed    = Status("Processed")
 )

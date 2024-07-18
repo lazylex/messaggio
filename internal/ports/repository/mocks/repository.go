@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 	dto "github.com/lazylex/messaggio/internal/dto"
 )
 
@@ -36,27 +37,29 @@ func (m *MockInterface) EXPECT() *MockInterfaceMockRecorder {
 }
 
 // SaveMessage mocks base method.
-func (m *MockInterface) SaveMessage(ctx context.Context, id dto.MessageID) error {
+func (m *MockInterface) SaveMessage(ctx context.Context, data dto.MessageID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveMessage", ctx, id)
+	ret := m.ctrl.Call(m, "SaveMessage", ctx, data)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveMessage indicates an expected call of SaveMessage.
-func (mr *MockInterfaceMockRecorder) SaveMessage(ctx, id interface{}) *gomock.Call {
+func (mr *MockInterfaceMockRecorder) SaveMessage(ctx, data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMessage", reflect.TypeOf((*MockInterface)(nil).SaveMessage), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMessage", reflect.TypeOf((*MockInterface)(nil).SaveMessage), ctx, data)
 }
 
 // UpdateStatus mocks base method.
-func (m *MockInterface) UpdateStatus(ctx context.Context) {
+func (m *MockInterface) UpdateStatus(ctx context.Context, id uuid.UUID) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateStatus", ctx)
+	ret := m.ctrl.Call(m, "UpdateStatus", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateStatus indicates an expected call of UpdateStatus.
-func (mr *MockInterfaceMockRecorder) UpdateStatus(ctx interface{}) *gomock.Call {
+func (mr *MockInterfaceMockRecorder) UpdateStatus(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockInterface)(nil).UpdateStatus), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockInterface)(nil).UpdateStatus), ctx, id)
 }

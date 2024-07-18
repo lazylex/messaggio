@@ -1,0 +1,4 @@
+kafka:
+  kafka_brokers: ["localhost:9092"]
+  kafka_message_topic: "message-topic"
+  kafka_confirm_topic: "confirm-status-topic"

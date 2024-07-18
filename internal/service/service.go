@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
 	"github.com/lazylex/messaggio/internal/dto"
-	bo "github.com/lazylex/messaggio/internal/ports/broker_outbox"
-	ro "github.com/lazylex/messaggio/internal/ports/repo_outbox"
+	ido "github.com/lazylex/messaggio/internal/ports/id_outbox"
+	reo "github.com/lazylex/messaggio/internal/ports/record_outbox"
 	"github.com/lazylex/messaggio/internal/ports/repository"
 	"log/slog"
 	"os"
@@ -28,14 +28,14 @@ type Service struct {
 }
 
 type outbox struct {
-	broker     bo.Interface // Outbox для сохранения ID сообщений, не отправленных в брокер сообщений
-	repoRecord ro.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
-	repoStatus bo.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
+	broker     ido.Interface // Outbox для сохранения ID сообщений, не отправленных в брокер сообщений
+	repoRecord reo.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
+	repoStatus ido.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
-func MustCreate(repo repository.Interface, brokerOutbox bo.Interface, repoOutbox ro.Interface) *Service {
-	if repo == nil || brokerOutbox == nil || repoOutbox == nil {
+func MustCreate(repo repository.Interface, brokerOutbox, statusOutbox ido.Interface, repoOutbox reo.Interface) *Service {
+	if repo == nil || brokerOutbox == nil || repoOutbox == nil || statusOutbox == nil {
 		slog.Error("nil pointer in function parameters")
 		os.Exit(1)
 	}
@@ -44,7 +44,7 @@ func MustCreate(repo repository.Interface, brokerOutbox bo.Interface, repoOutbox
 	errorChan := make(chan uuid.UUID)
 
 	return &Service{messageChan: messageChan, errorChan: errorChan,
-		outbox: outbox{broker: brokerOutbox, repoRecord: repoOutbox},
+		outbox: outbox{broker: brokerOutbox, repoRecord: repoOutbox, repoStatus: statusOutbox},
 		repo:   repo}
 }
 

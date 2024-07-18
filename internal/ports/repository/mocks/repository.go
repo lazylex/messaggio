@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	message "github.com/lazylex/messaggio/internal/domain/value_objects/message"
+	dto "github.com/lazylex/messaggio/internal/dto"
 )
 
 // MockInterface is a mock of Interface interface.
@@ -36,17 +36,17 @@ func (m *MockInterface) EXPECT() *MockInterfaceMockRecorder {
 }
 
 // SaveMessage mocks base method.
-func (m *MockInterface) SaveMessage(ctx context.Context, msg message.Message) error {
+func (m *MockInterface) SaveMessage(ctx context.Context, id dto.MessageID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveMessage", ctx, msg)
+	ret := m.ctrl.Call(m, "SaveMessage", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveMessage indicates an expected call of SaveMessage.
-func (mr *MockInterfaceMockRecorder) SaveMessage(ctx, msg interface{}) *gomock.Call {
+func (mr *MockInterfaceMockRecorder) SaveMessage(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMessage", reflect.TypeOf((*MockInterface)(nil).SaveMessage), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMessage", reflect.TypeOf((*MockInterface)(nil).SaveMessage), ctx, id)
 }
 
 // UpdateStatus mocks base method.

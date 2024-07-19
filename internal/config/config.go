@@ -10,6 +10,8 @@ Package config: пакет содержит объявления всех стр
 
 2. Kafka - структура, содержащая названия топиков и брокеры Apache Kafka
 
+3. PersistentStorage - настройки реляционной СУБД, используемой в качестве постоянного хранилища
+
 */
 
 package config
@@ -19,6 +21,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 	"log"
 	"os"
+	"time"
 )
 
 const (
@@ -28,13 +31,26 @@ const (
 )
 
 type Config struct {
-	Kafka
+	Kafka             `yaml:"kafka"`
+	PersistentStorage `yaml:"persistent_storage"`
 }
 
 type Kafka struct {
 	Brokers      []string `yaml:"kafka_brokers" env:"KAFKA_BROKERS"`
 	MessageTopic string   `yaml:"kafka_message_topic" env:"KAFKA_MESSAGE_TOPIC"`
 	ConfirmTopic string   `yaml:"kafka_confirm_topic" env:"KAFKA_CONFIRM_TOPIC"`
+}
+
+type PersistentStorage struct {
+	DatabaseLogin              string `yaml:"database_login" env:"DATABASE_LOGIN" env-required:"true"`
+	DatabasePassword           string `yaml:"database_password" env:"DATABASE_PASSWORD" env-required:"true"`
+	DatabaseAddress            string `yaml:"database_address" env:"DATABASE_ADDRESS" env-required:"true"`
+	DatabasePort               int    `yaml:"database_port" env:"DATABASE_PORT" env-required:"true"`
+	DatabaseName               string `yaml:"database_name" env:"DATABASE_NAME" env-required:"true"`
+	DatabaseSchema             string `yaml:"database_schema" env:"DATABASE_SCHEMA"`
+	DatabaseMaxOpenConnections int    `yaml:"database_max_open_connections" env:"DATABASE_MAX_OPEN_CONNECTIONS" env-required:"true"`
+
+	QueryTimeout time.Duration `yaml:"query_timeout" env:"QUERY_TIMEOUT" env-required:"true"`
 }
 
 // MustLoad возвращает конфигурацию, считанную из файла, путь к которому передан из командной строки по флагу config или

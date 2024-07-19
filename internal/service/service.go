@@ -57,10 +57,18 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 	data := dto.MessageID{Message: msg, ID: id}
 
 	if err = s.saveMessage(ctx, data); err != nil {
-		return id, err
+		defer func() {
+			if err := s.outbox.repoRecord.Add(data); err != nil {
+				slog.Error(err.Error())
+			}
+		}()
+
+		return id, ErrSavingToRepository
 	}
 
-	s.messageChan <- data
+	defer func() {
+		s.messageChan <- data
+	}()
 
 	return id, nil
 }

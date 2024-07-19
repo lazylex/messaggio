@@ -12,6 +12,8 @@ Package config: пакет содержит объявления всех стр
 
 3. PersistentStorage - настройки реляционной СУБД, используемой в качестве постоянного хранилища
 
+4. HttpServer - конфигурация http-сервера
+
 */
 
 package config
@@ -33,6 +35,7 @@ const (
 type Config struct {
 	Kafka             `yaml:"kafka"`
 	PersistentStorage `yaml:"persistent_storage"`
+	HttpServer        `yaml:"http_server"`
 }
 
 type Kafka struct {
@@ -51,6 +54,16 @@ type PersistentStorage struct {
 	DatabaseMaxOpenConnections int    `yaml:"database_max_open_connections" env:"DATABASE_MAX_OPEN_CONNECTIONS" env-required:"true"`
 
 	QueryTimeout time.Duration `yaml:"query_timeout" env:"QUERY_TIMEOUT" env-required:"true"`
+}
+
+type HttpServer struct {
+	Address         string        `yaml:"address" env:"ADDRESS" env-required:"true"`
+	ReadTimeout     time.Duration `yaml:"read_timeout" env:"READ_TIMEOUT" env-required:"true"`
+	WriteTimeout    time.Duration `yaml:"write_timeout" env:"WRITE_TIMEOUT" env-required:"true"`
+	IdleTimeout     time.Duration `yaml:"idle_timeout" env:"IDLE_TIMEOUT" env-required:"true"`
+	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" env:"SHUTDOWN_TIMEOUT" env-required:"true"`
+	RequestTimeout  time.Duration `yaml:"request_timeout" env:"REQUEST_TIMEOUT" env-required:"true"`
+	EnableProfiler  bool          `yaml:"enable_profiler" env:"ENABLE_PROFILER"`
 }
 
 // MustLoad возвращает конфигурацию, считанную из файла, путь к которому передан из командной строки по флагу config или

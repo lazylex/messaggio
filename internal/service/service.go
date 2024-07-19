@@ -66,7 +66,7 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 		return id, ErrSavingToRepository
 	}
 
-	defer func() {
+	go func() {
 		s.messageChan <- data
 	}()
 

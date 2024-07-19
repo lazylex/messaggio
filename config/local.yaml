@@ -11,3 +11,11 @@ persistent_storage:
   database_max_open_connections: 10
   database_name: "messaggio"
   query_timeout: 5s
+http_server:
+  address: "localhost:8897"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 15s
+  request_timeout: 50s
+  enable_profiler: true

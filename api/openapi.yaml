@@ -1,0 +1,54 @@
+openapi: 3.0.3
+info:
+  title: Messaggio
+  description: Микросервис обработки сообщений
+  version: 0.0.1
+  contact:
+    email: lazylex@mail.ru
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: 'http://localhost:8897'
+tags:
+  - name: messages
+    description: Работа с сообщениями
+paths:
+  /msg:
+    post:
+      tags:
+        - messages
+      summary: Отправка сообщения в сервис
+      description: Отправка сообщения в сервис, сохранение в БД и отправка в брокер сообщений
+      operationId: ProcessMessage
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            example: just simple message
+      responses:
+        '102':
+          description: Сообщение принято в сервисе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusID'
+        '400':
+          description: Ошибка чтения или пустое тело сообщения
+        '500':
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    StatusID:
+      type: object
+      description: Статус и идентификатор сообщения
+      properties:
+        status:
+          type: string
+          description: Статус сообщения
+          example: saved, sent to the broker...
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор отправленного сообщения
+          example: cb0e57e2-5050-4644-8ada-1dc23ef1f518

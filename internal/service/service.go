@@ -11,6 +11,7 @@ import (
 	"github.com/lazylex/messaggio/internal/ports/repository"
 	"log/slog"
 	"os"
+	"sync/atomic"
 )
 
 var (
@@ -21,10 +22,13 @@ var (
 )
 
 type Service struct {
-	repo        repository.Interface // Объект для взаимодействия с БД
-	messageChan chan dto.MessageID   // Канал для отправки сообщений
-	errorChan   chan uuid.UUID       // Канал для приема идентификаторов неотправленных сообщений
-	outbox                           // Хранилище неотправленных данных
+	repo                 repository.Interface // Объект для взаимодействия с БД
+	messageChan          chan dto.MessageID   // Канал для отправки сообщений
+	errorChan            chan uuid.UUID       // Канал для приема идентификаторов неотправленных сообщений
+	outbox               outbox               // Хранилище неотправленных данных
+	total                atomic.Uint64        // Всего пришло сообщений на обработку
+	statusesSentToOutbox atomic.Uint64        // Всего сохранено статусов в outbox
+	messagesSentToOutbox atomic.Uint64        // Всего сохранено сообщений в outbox
 }
 
 type outbox struct {
@@ -56,11 +60,16 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 	id := uuid.New()
 	data := dto.MessageID{Message: msg, ID: id}
 
+	s.total.Add(1)
+
 	if err = s.saveMessage(ctx, data); err != nil {
 		defer func() {
 			if err := s.outbox.repoRecord.Add(data); err != nil {
 				slog.Error(err.Error())
+				return
 			}
+
+			s.messagesSentToOutbox.Add(1)
 		}()
 
 		return id, ErrSavingToRepository
@@ -86,6 +95,8 @@ func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) erro
 		return err
 	}
 
+	s.statusesSentToOutbox.Add(1)
+
 	return ErrUpdateStatusInRepository
 }
 
@@ -103,6 +114,15 @@ func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 	}
 
 	return ErrSavingToRepository
+}
+
+// Statistic возвращает статистику.
+func (s *Service) Statistic() dto.Statistic {
+	return dto.Statistic{
+		Total:                s.total.Load(),
+		StatusesSentToOutbox: s.statusesSentToOutbox.Load(),
+		MessagesSentToOutbox: s.messagesSentToOutbox.Load(),
+	}
 }
 
 // MessageChan возвращает канал, который будет служить для отправки сообщений в брокер сообщений.

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -27,6 +28,8 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer) *Server {
 	server := &Server{mux: mux, service: domainService, cfg: &cfg}
 
 	mux.HandleFunc("/msg", server.ProcessMessage)
+	// TODO использовать метрики Prometheus для сбора статистики?
+	mux.HandleFunc("/statistic", server.Statistic)
 
 	server.srv = &http.Server{
 		Addr:         server.cfg.Address,
@@ -73,6 +76,27 @@ func (s *Server) ProcessMessage(w http.ResponseWriter, r *http.Request) {
 		slog.Error(err.Error())
 	}
 
+}
+
+// Statistic возвращает статистику пришедших/отправленных на временное хранение сообщений.
+func (s *Server) Statistic(w http.ResponseWriter, r *http.Request) {
+	if !allowedOnlyMethod(http.MethodGet, w, r) {
+		return
+	}
+
+	statistic := s.service.Statistic()
+	jsonData, err := json.Marshal(statistic)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error(err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		slog.Error(err.Error())
+	}
 }
 
 // MustRun производит запуск сервера в отдельной go-рутине. В случае ошибки останавливает работу приложения.

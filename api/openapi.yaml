@@ -37,6 +37,24 @@ paths:
           description: Ошибка чтения или пустое тело сообщения
         '500':
           description: Внутренняя ошибка сервера
+  /statistic:
+    get:
+      tags:
+        - messages
+      summary: Получение статистики по отправленным и ожидающим сообщениям
+      description: Возвращает JSON со статистикой по сообщениям. Содержит данные об общем количестве пришедших на
+        обработку сообщений (total), несвоевременно обновленных в БД статусах (statuses_sent_to_outbox), несвоевременно
+        сохраненных в БД сообщениях (messages_sent_to_outbox)
+      operationId: Statistic
+      responses:
+        '200':
+          description: Успешное получение статистики
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Statistic'
+        '500':
+          description: Внутренняя ошибка сервера
 components:
   schemas:
     StatusID:
@@ -52,3 +70,23 @@ components:
           format: uuid
           description: Идентификатор отправленного сообщения
           example: cb0e57e2-5050-4644-8ada-1dc23ef1f518
+    Statistic:
+      type: object
+      description: Статистика обработки сообщений
+      properties:
+        total:
+          type: integer
+          description: Всего получено сообщений на обработку
+          example: 1569
+          minimum: 0
+        statuses_sent_to_outbox:
+          type: integer
+          description: Всего было сохранено идентификаторов сообщений во временное хранилище для дальнейших попыток
+            обновлений статуса в БД
+          example: 15
+          minimum: 0
+        messages_sent_to_outbox:
+          type: integer
+          description: Всего было сохранено сообщений во временное хранилище для дальнейших попыток сохранения в БД
+          example: 3
+          minimum: 0

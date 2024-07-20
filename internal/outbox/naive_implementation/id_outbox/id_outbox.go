@@ -56,3 +56,10 @@ func (n *Naive) Pop() uuid.UUID {
 
 	return result
 }
+
+// Len возвращает количество элементов в хранилище.
+func (n *Naive) Len() int {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return len(n.ids)
+}

@@ -14,6 +14,8 @@ Package config: пакет содержит объявления всех стр
 
 4. HttpServer - конфигурация http-сервера
 
+5. Service - конфигурация сервисной логики
+
 */
 
 package config
@@ -36,6 +38,7 @@ type Config struct {
 	Kafka             `yaml:"kafka"`
 	PersistentStorage `yaml:"persistent_storage"`
 	HttpServer        `yaml:"http_server"`
+	Service           `yaml:"service"`
 }
 
 type Kafka struct {
@@ -64,6 +67,10 @@ type HttpServer struct {
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" env:"SHUTDOWN_TIMEOUT" env-required:"true"`
 	RequestTimeout  time.Duration `yaml:"request_timeout" env:"REQUEST_TIMEOUT" env-required:"true"`
 	EnableProfiler  bool          `yaml:"enable_profiler" env:"ENABLE_PROFILER"`
+}
+
+type Service struct {
+	RetryTimeout time.Duration `yaml:"retry_timeout" env:"RETRY_TIMEOUT" env-required:"true"`
 }
 
 // MustLoad возвращает конфигурацию, считанную из файла, путь к которому передан из командной строки по флагу config или

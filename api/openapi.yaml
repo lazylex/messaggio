@@ -42,9 +42,9 @@ paths:
       tags:
         - messages
       summary: Получение статистики по отправленным и ожидающим сообщениям
-      description: Возвращает JSON со статистикой по сообщениям. Содержит данные об общем количестве пришедших на
-        обработку сообщений (total), несвоевременно обновленных в БД статусах (statuses_sent_to_outbox), несвоевременно
-        сохраненных в БД сообщениях (messages_sent_to_outbox)
+      description: Возвращает JSON со статистикой по сообщениям с момента запуска приложения. Содержит данные об общем 
+        количестве пришедших на обработку сообщений (total), несвоевременно обновленных в БД статусах 
+        (statuses_sent_to_outbox), несвоевременно сохраненных в БД сообщениях (messages_sent_to_outbox)
       operationId: Statistic
       responses:
         '200':
@@ -88,5 +88,15 @@ components:
         messages_sent_to_outbox:
           type: integer
           description: Всего было сохранено сообщений во временное хранилище для дальнейших попыток сохранения в БД
+          example: 3
+          minimum: 0
+        statuses_returned_from_outbox:
+          type: integer
+          description: Всего удалось переместить данных о статусе из outbox в БД
+          example: 15
+          minimum: 0
+        messages_returned_from_outbox:
+          type: integer
+          description: Всего удалось переместить сообщений из outbox в БД
           example: 3
           minimum: 0

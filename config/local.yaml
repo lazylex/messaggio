@@ -19,3 +19,5 @@ http_server:
   shutdown_timeout: 15s
   request_timeout: 50s
   enable_profiler: true
+service:
+  retry_timeout: 5s

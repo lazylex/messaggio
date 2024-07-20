@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
 	"github.com/lazylex/messaggio/internal/dto"
 	ido "github.com/lazylex/messaggio/internal/ports/id_outbox"
@@ -12,6 +13,7 @@ import (
 	"log/slog"
 	"os"
 	"sync/atomic"
+	"time"
 )
 
 var (
@@ -22,24 +24,25 @@ var (
 )
 
 type Service struct {
-	repo                 repository.Interface // Объект для взаимодействия с БД
-	messageChan          chan dto.MessageID   // Канал для отправки сообщений
-	errorChan            chan uuid.UUID       // Канал для приема идентификаторов неотправленных сообщений
-	outbox               outbox               // Хранилище неотправленных данных
-	total                atomic.Uint64        // Всего пришло сообщений на обработку
-	statusesSentToOutbox atomic.Uint64        // Всего сохранено статусов в outbox
-	messagesSentToOutbox atomic.Uint64        // Всего сохранено сообщений в outbox
+	repo                       repository.Interface // Объект для взаимодействия с БД
+	messageChan                chan dto.MessageID   // Канал для отправки сообщений
+	errorChan                  chan uuid.UUID       // Канал для приема идентификаторов неотправленных сообщений
+	outbox                     outbox               // Хранилище неотправленных данных
+	total                      atomic.Uint64        // Всего пришло сообщений на обработку
+	statusesSentToOutbox       atomic.Uint64        // Всего сохранено статусов в outbox
+	statusesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить данных о статусе из outbox в БД
+	messagesSentToOutbox       atomic.Uint64        // Всего сохранено сообщений в outbox
+	messagesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить сообщений из outbox в БД
 }
 
 type outbox struct {
-	broker     ido.Interface // Outbox для сохранения ID сообщений, не отправленных в брокер сообщений
 	repoRecord reo.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
 	repoStatus ido.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
-func MustCreate(repo repository.Interface, brokerOutbox, statusOutbox ido.Interface, repoOutbox reo.Interface) *Service {
-	if repo == nil || brokerOutbox == nil || repoOutbox == nil || statusOutbox == nil {
+func MustCreate(repo repository.Interface, statusOutbox ido.Interface, repoOutbox reo.Interface, cfg config.Service) *Service {
+	if repo == nil || repoOutbox == nil || statusOutbox == nil {
 		slog.Error("nil pointer in function parameters")
 		os.Exit(1)
 	}
@@ -47,9 +50,18 @@ func MustCreate(repo repository.Interface, brokerOutbox, statusOutbox ido.Interf
 	messageChan := make(chan dto.MessageID)
 	errorChan := make(chan uuid.UUID)
 
-	return &Service{messageChan: messageChan, errorChan: errorChan,
-		outbox: outbox{broker: brokerOutbox, repoRecord: repoOutbox, repoStatus: statusOutbox},
+	s := &Service{messageChan: messageChan, errorChan: errorChan,
+		outbox: outbox{repoRecord: repoOutbox, repoStatus: statusOutbox},
 		repo:   repo}
+
+	go func() {
+		for range time.Tick(cfg.RetryTimeout) {
+			go s.trySaveMessageAgain()
+			go s.tryUpdateMessageStatusAgain()
+		}
+	}()
+
+	return s
 }
 
 // ProcessMessage сохраняет сообщение в БД, затем отправляет его в Kafka. При ошибке сохранения в БД или отправки
@@ -100,6 +112,50 @@ func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) erro
 	return ErrUpdateStatusInRepository
 }
 
+// trySaveMessageAgain рекурсивно пытается сохранить в БД сообщения, ранее сохраненные в outbox. Попытки осуществляются
+// пока outbox содержит элементы и сохранение не вызывает ошибку.
+func (s *Service) trySaveMessageAgain() {
+	var err error
+	ctx := context.Background()
+
+	if s.outbox.repoRecord.Len() == 0 {
+		return
+	}
+
+	record := s.outbox.repoRecord.Pop()
+	if err = s.repo.SaveMessage(ctx, record); err == nil {
+		s.messagesReturnedFromOutbox.Add(1)
+		s.trySaveMessageAgain()
+	} else {
+		err = s.outbox.repoRecord.Add(record)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}
+}
+
+// tryUpdateMessageStatusAgain рекурсивно пытается обновить в БД статус сообщений, чьи идентификаторы ранее были
+// сохранены в outbox. Попытки осуществляются пока outbox содержит элементы и обновление не вызывает ошибку.
+func (s *Service) tryUpdateMessageStatusAgain() {
+	var err error
+	ctx := context.Background()
+
+	if s.outbox.repoStatus.Len() == 0 {
+		return
+	}
+
+	id := s.outbox.repoStatus.Pop()
+	if err = s.repo.UpdateStatus(ctx, id); err == nil {
+		s.statusesReturnedFromOutbox.Add(1)
+		s.tryUpdateMessageStatusAgain()
+	} else {
+		err = s.outbox.repoStatus.Add(id)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}
+}
+
 // saveMessage сохраняет сообщение в БД. При ошибке сохранения записывает в outbox для дальнейших попыток сохранения.
 func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 	var err error
@@ -119,9 +175,11 @@ func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 // Statistic возвращает статистику.
 func (s *Service) Statistic() dto.Statistic {
 	return dto.Statistic{
-		Total:                s.total.Load(),
-		StatusesSentToOutbox: s.statusesSentToOutbox.Load(),
-		MessagesSentToOutbox: s.messagesSentToOutbox.Load(),
+		Total:                      s.total.Load(),
+		StatusesSentToOutbox:       s.statusesSentToOutbox.Load(),
+		MessagesSentToOutbox:       s.messagesSentToOutbox.Load(),
+		MessagesReturnedFromOutbox: s.messagesReturnedFromOutbox.Load(),
+		StatusesReturnedFromOutbox: s.statusesReturnedFromOutbox.Load(),
 	}
 }
 

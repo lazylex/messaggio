@@ -17,10 +17,9 @@ import (
 func main() {
 	cfg := config.MustLoad()
 	repo := postgresql.MustCreate(cfg.PersistentStorage)
-	brokerOutbox := id_outbox.New("brokerOutbox")
 	statusOutbox := id_outbox.New("statusOutbox")
 	repoOutbox := record_outbox.New("repoOutbox")
-	domainService := service.MustCreate(repo, brokerOutbox, statusOutbox, repoOutbox)
+	domainService := service.MustCreate(repo, statusOutbox, repoOutbox, cfg.Service)
 	httpServer := server.MustCreate(domainService, cfg.HttpServer)
 	httpServer.MustRun()
 

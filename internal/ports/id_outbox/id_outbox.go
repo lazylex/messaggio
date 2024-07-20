@@ -6,4 +6,5 @@ import "github.com/google/uuid"
 type Interface interface {
 	Add(uuid uuid.UUID) error
 	Pop() uuid.UUID
+	Len() int
 }

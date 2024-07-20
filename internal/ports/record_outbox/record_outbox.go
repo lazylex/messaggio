@@ -6,4 +6,5 @@ import "github.com/lazylex/messaggio/internal/dto"
 type Interface interface {
 	Add(dto.MessageID) error
 	Pop() dto.MessageID
+	Len() int
 }

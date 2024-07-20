@@ -48,6 +48,20 @@ func (mr *MockInterfaceMockRecorder) Add(uuid interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockInterface)(nil).Add), uuid)
 }
 
+// Len mocks base method.
+func (m *MockInterface) Len() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Len")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// Len indicates an expected call of Len.
+func (mr *MockInterfaceMockRecorder) Len() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockInterface)(nil).Len))
+}
+
 // Pop mocks base method.
 func (m *MockInterface) Pop() uuid.UUID {
 	m.ctrl.T.Helper()

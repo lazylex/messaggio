@@ -1,3 +1,5 @@
+instance: "8f119105-415f-4606-811a-17ca413eccbc"
+env: "local"
 kafka:
   kafka_brokers: ["localhost:9092"]
   kafka_message_topic: "message-topic"
@@ -23,4 +25,3 @@ http_server:
   enable_profiler: true
 service:
   retry_timeout: 5s
-instance: "8f119105-415f-4606-811a-17ca413eccbc"

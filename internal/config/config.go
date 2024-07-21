@@ -8,15 +8,17 @@ Package config: пакет содержит объявления всех стр
 
 0. Instance - строка, являющаяся уникальным идентификатором экземпляра приложения в системе
 
-1. Config - структура, содержащая все остальные конфигурации
+1. Env - уровень запуска приложения (EnvironmentLocal, EnvironmentDebug или EnvironmentProduction)
 
-2. Kafka - структура, содержащая названия топиков и брокеры Apache Kafka
+2. Config - структура, содержащая все остальные конфигурации
 
-3. PersistentStorage - настройки реляционной СУБД, используемой в качестве постоянного хранилища
+3. Kafka - структура, содержащая названия топиков и брокеры Apache Kafka
 
-4. HttpServer - конфигурация http-сервера
+4. PersistentStorage - настройки реляционной СУБД, используемой в качестве постоянного хранилища
 
-5. Service - конфигурация сервисной логики
+5. HttpServer - конфигурация http-сервера
+
+6. Service - конфигурация сервисной логики
 
 */
 
@@ -42,6 +44,7 @@ type Config struct {
 	HttpServer        `yaml:"http_server"`
 	Service           `yaml:"service"`
 	Instance          string `yaml:"instance" env-required:"true"`
+	Env               string `yaml:"env" env:"ENV" env-required:"true"`
 }
 
 type Kafka struct {

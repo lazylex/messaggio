@@ -20,7 +20,6 @@ var (
 	ErrSavingToRepository       = errors.New("failed to save to repository")
 	ErrUpdateStatusInRepository = errors.New("failed to update status in repository")
 	ErrSavingToRepoRecordOutbox = errors.New("failed to save to repository record outbox")
-	ErrSavingToRepoStatusOutbox = errors.New("failed to save to repository status outbox")
 )
 
 type Service struct {
@@ -28,8 +27,6 @@ type Service struct {
 	messageChan                chan dto.MessageID   // Канал для отправки сообщений
 	outbox                     outbox               // Хранилище неотправленных данных
 	total                      atomic.Uint64        // Всего пришло сообщений на обработку
-	statusesSentToOutbox       atomic.Uint64        // Всего сохранено статусов в outbox
-	statusesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить данных о статусе из outbox в БД
 	messagesSentToOutbox       atomic.Uint64        // Всего сохранено сообщений в outbox
 	messagesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить сообщений из outbox в БД
 	canRetrySendToBroker       atomic.Bool          // Флаг, означающий, что запись в канал для отправки сообщений в kafka прошла успешно и есть смысл запускать go-рутину для последующих попыток отправки
@@ -38,7 +35,6 @@ type Service struct {
 type outbox struct {
 	brokerRecord reo.Interface // Outbox для сохранения сообщений с ID, не отправленных в Kafka
 	repoRecord   reo.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
-	repoStatus   ido.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
@@ -51,14 +47,14 @@ func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOut
 	messageChan := make(chan dto.MessageID)
 
 	s := &Service{messageChan: messageChan,
-		outbox: outbox{repoRecord: repoOutbox, repoStatus: statusOutbox, brokerRecord: brokerOutbox},
+		outbox: outbox{repoRecord: repoOutbox, brokerRecord: brokerOutbox},
 		repo:   repo}
 
 	s.canRetrySendToBroker.Store(true)
 	go func() {
 		for range time.Tick(cfg.RetryTimeout) {
 			go s.trySaveMessageAgain()
-			go s.tryUpdateMessageStatusAgain()
+
 			if s.canRetrySendToBroker.Load() {
 				go s.trySendToBrokerAgain()
 			}
@@ -107,18 +103,9 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 
 // MarkMessageAsProcessed меняет статус в БД у сообщения на "Processed".
 func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) error {
-	var err error
-
-	if err = s.repo.UpdateStatus(ctx, id); err == nil {
+	if s.repo.UpdateStatus(ctx, id) == nil {
 		return nil
 	}
-
-	if err = s.outbox.repoStatus.Add(id); err != nil {
-		slog.Error(ErrSavingToRepoStatusOutbox.Error())
-		return err
-	}
-
-	s.statusesSentToOutbox.Add(1)
 
 	return ErrUpdateStatusInRepository
 }
@@ -144,28 +131,6 @@ func (s *Service) trySaveMessageAgain() {
 		s.trySaveMessageAgain()
 	} else {
 		err = s.outbox.repoRecord.Add(record)
-		if err != nil {
-			slog.Error(err.Error())
-		}
-	}
-}
-
-// tryUpdateMessageStatusAgain рекурсивно пытается обновить в БД статус сообщений, чьи идентификаторы ранее были
-// сохранены в outbox. Попытки осуществляются пока outbox содержит элементы и обновление не вызывает ошибку.
-func (s *Service) tryUpdateMessageStatusAgain() {
-	var err error
-	ctx := context.Background()
-
-	if s.outbox.repoStatus.Len() == 0 {
-		return
-	}
-
-	id := s.outbox.repoStatus.Pop()
-	if err = s.repo.UpdateStatus(ctx, id); err == nil {
-		s.statusesReturnedFromOutbox.Add(1)
-		s.tryUpdateMessageStatusAgain()
-	} else {
-		err = s.outbox.repoStatus.Add(id)
 		if err != nil {
 			slog.Error(err.Error())
 		}
@@ -207,10 +172,8 @@ func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 func (s *Service) Statistic() dto.Statistic {
 	return dto.Statistic{
 		Total:                      s.total.Load(),
-		StatusesSentToOutbox:       s.statusesSentToOutbox.Load(),
 		MessagesSentToOutbox:       s.messagesSentToOutbox.Load(),
 		MessagesReturnedFromOutbox: s.messagesReturnedFromOutbox.Load(),
-		StatusesReturnedFromOutbox: s.statusesReturnedFromOutbox.Load(),
 	}
 }
 

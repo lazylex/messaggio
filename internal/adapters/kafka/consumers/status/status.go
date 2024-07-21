@@ -53,8 +53,6 @@ func StartInteraction(cfg config.Kafka, service service.Interface, instance stri
 			} else if err = r.CommitMessages(ctx, m); err != nil {
 				slog.Warn(err.Error())
 			}
-
-			// TODO учитывая, что не сохраненные в БД статусы не commit'ятся, стоит убрать outbox статусов. Он бесполезен
 		}
 	}()
 }

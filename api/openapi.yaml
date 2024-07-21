@@ -79,21 +79,10 @@ components:
           description: Всего получено сообщений на обработку
           example: 1569
           minimum: 0
-        statuses_sent_to_outbox:
-          type: integer
-          description: Всего было сохранено идентификаторов сообщений во временное хранилище для дальнейших попыток
-            обновлений статуса в БД
-          example: 15
-          minimum: 0
         messages_sent_to_outbox:
           type: integer
           description: Всего было сохранено сообщений во временное хранилище для дальнейших попыток сохранения в БД
           example: 3
-          minimum: 0
-        statuses_returned_from_outbox:
-          type: integer
-          description: Всего удалось переместить данных о статусе из outbox в БД
-          example: 15
           minimum: 0
         messages_returned_from_outbox:
           type: integer

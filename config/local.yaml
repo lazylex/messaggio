@@ -2,6 +2,8 @@ kafka:
   kafka_brokers: ["localhost:9092"]
   kafka_message_topic: "message-topic"
   kafka_confirm_topic: "confirm-status-topic"
+  kafka_write_timeout: 10s
+  kafka_time_between_attempts: 250ms
 persistent_storage:
   # логин и пароль ниже представлены в демонстрационных целях. Реальные конфиги должны быть в .gitignore
   database_login: "lex"
@@ -21,3 +23,4 @@ http_server:
   enable_profiler: true
 service:
   retry_timeout: 5s
+instance: "8f119105-415f-4606-811a-17ca413eccbc"

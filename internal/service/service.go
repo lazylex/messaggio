@@ -26,38 +26,42 @@ var (
 type Service struct {
 	repo                       repository.Interface // Объект для взаимодействия с БД
 	messageChan                chan dto.MessageID   // Канал для отправки сообщений
-	errorChan                  chan uuid.UUID       // Канал для приема идентификаторов неотправленных сообщений
 	outbox                     outbox               // Хранилище неотправленных данных
 	total                      atomic.Uint64        // Всего пришло сообщений на обработку
 	statusesSentToOutbox       atomic.Uint64        // Всего сохранено статусов в outbox
 	statusesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить данных о статусе из outbox в БД
 	messagesSentToOutbox       atomic.Uint64        // Всего сохранено сообщений в outbox
 	messagesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить сообщений из outbox в БД
+	canRetrySendToBroker       atomic.Bool          // Флаг, означающий, что запись в канал для отправки сообщений в kafka прошла успешно и есть смысл запускать go-рутину для последующих попыток отправки
 }
 
 type outbox struct {
-	repoRecord reo.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
-	repoStatus ido.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
+	brokerRecord reo.Interface // Outbox для сохранения сообщений с ID, не отправленных в Kafka
+	repoRecord   reo.Interface // Outbox для сохранения сообщений с ID, не сохраненных в БД
+	repoStatus   ido.Interface // Outbox для сохранения ID сообщений, у которых не удалось обновить статус в БД
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
-func MustCreate(repo repository.Interface, statusOutbox ido.Interface, repoOutbox reo.Interface, cfg config.Service) *Service {
+func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOutbox, repoOutbox reo.Interface, cfg config.Service) *Service {
 	if repo == nil || repoOutbox == nil || statusOutbox == nil {
 		slog.Error("nil pointer in function parameters")
 		os.Exit(1)
 	}
 
 	messageChan := make(chan dto.MessageID)
-	errorChan := make(chan uuid.UUID)
 
-	s := &Service{messageChan: messageChan, errorChan: errorChan,
-		outbox: outbox{repoRecord: repoOutbox, repoStatus: statusOutbox},
+	s := &Service{messageChan: messageChan,
+		outbox: outbox{repoRecord: repoOutbox, repoStatus: statusOutbox, brokerRecord: brokerOutbox},
 		repo:   repo}
 
+	s.canRetrySendToBroker.Store(true)
 	go func() {
 		for range time.Tick(cfg.RetryTimeout) {
 			go s.trySaveMessageAgain()
 			go s.tryUpdateMessageStatusAgain()
+			if s.canRetrySendToBroker.Load() {
+				go s.trySendToBrokerAgain()
+			}
 		}
 	}()
 
@@ -88,6 +92,13 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 	}
 
 	go func() {
+		if s.outbox.brokerRecord.Len() > 0 {
+			if err = s.outbox.brokerRecord.Add(data); err != nil {
+				slog.Error(err.Error())
+			}
+			return
+		}
+
 		s.messageChan <- data
 	}()
 
@@ -110,6 +121,11 @@ func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) erro
 	s.statusesSentToOutbox.Add(1)
 
 	return ErrUpdateStatusInRepository
+}
+
+// SaveUnsentMessage сохраняет в outbox сообщение, которое не удалось отправить в брокер сообщений.
+func (s *Service) SaveUnsentMessage(data dto.MessageID) error {
+	return s.outbox.brokerRecord.Add(data)
 }
 
 // trySaveMessageAgain рекурсивно пытается сохранить в БД сообщения, ранее сохраненные в outbox. Попытки осуществляются
@@ -156,6 +172,21 @@ func (s *Service) tryUpdateMessageStatusAgain() {
 	}
 }
 
+// trySendToBrokerAgain рекурсивно пытается отправить в брокер не отправленное ранее сообщение. Попытки осуществляются
+// пока outbox содержит элементы.
+func (s *Service) trySendToBrokerAgain() {
+	if s.outbox.brokerRecord.Len() == 0 {
+		return
+	}
+
+	data := s.outbox.brokerRecord.Pop()
+	s.canRetrySendToBroker.Store(false)
+	s.messageChan <- data
+	s.canRetrySendToBroker.Store(true)
+
+	s.trySendToBrokerAgain()
+}
+
 // saveMessage сохраняет сообщение в БД. При ошибке сохранения записывает в outbox для дальнейших попыток сохранения.
 func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 	var err error
@@ -186,9 +217,4 @@ func (s *Service) Statistic() dto.Statistic {
 // MessageChan возвращает канал, который будет служить для отправки сообщений в брокер сообщений.
 func (s *Service) MessageChan() chan dto.MessageID {
 	return s.messageChan
-}
-
-// ErrorChan возвращает канал для приема идентификаторов сообщений, которые не удалось отправить в топик.
-func (s *Service) ErrorChan() chan uuid.UUID {
-	return s.errorChan
 }

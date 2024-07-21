@@ -6,6 +6,8 @@ Package config: пакет содержит объявления всех стр
 
 # Структуры конфигурации
 
+0. Instance - строка, являющаяся уникальным идентификатором экземпляра приложения в системе
+
 1. Config - структура, содержащая все остальные конфигурации
 
 2. Kafka - структура, содержащая названия топиков и брокеры Apache Kafka
@@ -39,12 +41,15 @@ type Config struct {
 	PersistentStorage `yaml:"persistent_storage"`
 	HttpServer        `yaml:"http_server"`
 	Service           `yaml:"service"`
+	Instance          string `yaml:"instance" env-required:"true"`
 }
 
 type Kafka struct {
-	Brokers      []string `yaml:"kafka_brokers" env:"KAFKA_BROKERS"`
-	MessageTopic string   `yaml:"kafka_message_topic" env:"KAFKA_MESSAGE_TOPIC"`
-	ConfirmTopic string   `yaml:"kafka_confirm_topic" env:"KAFKA_CONFIRM_TOPIC"`
+	Brokers                  []string      `yaml:"kafka_brokers" env:"KAFKA_BROKERS"`
+	MessageTopic             string        `yaml:"kafka_message_topic" env:"KAFKA_MESSAGE_TOPIC"`
+	ConfirmTopic             string        `yaml:"kafka_confirm_topic" env:"KAFKA_CONFIRM_TOPIC"`
+	KafkaWriteTimeout        time.Duration `yaml:"kafka_write_timeout" env:"KAFKA_WRITE_TIMEOUT" env-required:"true"`
+	KafkaTimeBetweenAttempts time.Duration `yaml:"kafka_time_between_attempts" env:"KAFKA_TIME_BETWEEN_ATTEMPTS" env-required:"true"`
 }
 
 type PersistentStorage struct {

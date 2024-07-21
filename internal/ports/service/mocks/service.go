@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
 	message "github.com/lazylex/messaggio/internal/domain/value_objects/message"
+	dto "github.com/lazylex/messaggio/internal/dto"
 )
 
 // MockInterface is a mock of Interface interface.
@@ -50,6 +51,20 @@ func (mr *MockInterfaceMockRecorder) MarkMessageAsProcessed(ctx, id interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkMessageAsProcessed", reflect.TypeOf((*MockInterface)(nil).MarkMessageAsProcessed), ctx, id)
 }
 
+// MessageChan mocks base method.
+func (m *MockInterface) MessageChan() chan dto.MessageID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MessageChan")
+	ret0, _ := ret[0].(chan dto.MessageID)
+	return ret0
+}
+
+// MessageChan indicates an expected call of MessageChan.
+func (mr *MockInterfaceMockRecorder) MessageChan() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessageChan", reflect.TypeOf((*MockInterface)(nil).MessageChan))
+}
+
 // ProcessMessage mocks base method.
 func (m *MockInterface) ProcessMessage(ctx context.Context, msg message.Message) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -63,4 +78,18 @@ func (m *MockInterface) ProcessMessage(ctx context.Context, msg message.Message)
 func (mr *MockInterfaceMockRecorder) ProcessMessage(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockInterface)(nil).ProcessMessage), ctx, msg)
+}
+
+// SaveUnsentMessage mocks base method.
+func (m *MockInterface) SaveUnsentMessage(arg0 dto.MessageID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveUnsentMessage", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveUnsentMessage indicates an expected call of SaveUnsentMessage.
+func (mr *MockInterfaceMockRecorder) SaveUnsentMessage(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnsentMessage", reflect.TypeOf((*MockInterface)(nil).SaveUnsentMessage), arg0)
 }

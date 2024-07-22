@@ -2,13 +2,12 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/google/uuid"
+	"github.com/lazylex/messaggio/internal/adapters/http/handlers"
+	"github.com/lazylex/messaggio/internal/adapters/http/middleware/recoverer"
+	"github.com/lazylex/messaggio/internal/adapters/http/router"
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/service"
-	"io/ioutil"
 	"log/slog"
 	"net/http"
 	"os"
@@ -27,9 +26,10 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer) *Server {
 	mux := http.NewServeMux()
 	server := &Server{mux: mux, service: domainService, cfg: &cfg}
 
-	mux.HandleFunc("/msg", server.ProcessMessage)
-	// TODO использовать метрики Prometheus для сбора статистики?
-	mux.HandleFunc("/statistic", server.Statistic)
+	h := handlers.New(domainService, cfg.RequestTimeout)
+
+	router.AssignPathToHandler("/msg", server.mux, h.ProcessMessage)
+	router.AssignPathToHandler("/statistic", server.mux, h.Statistic)
 
 	server.srv = &http.Server{
 		Addr:         server.cfg.Address,
@@ -39,64 +39,9 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer) *Server {
 		IdleTimeout:  server.cfg.IdleTimeout,
 	}
 
+	server.srv.Handler = recoverer.Recoverer(server.srv.Handler)
+
 	return server
-}
-
-// ProcessMessage ручка сохранения и отправки сообщения в брокер. Сообщение - содержимое тела запроса.
-func (s *Server) ProcessMessage(w http.ResponseWriter, r *http.Request) {
-	if !allowedOnlyMethod(http.MethodPost, w, r) {
-		return
-	}
-
-	var (
-		message []byte
-		err     error
-		id      uuid.UUID
-	)
-
-	if message, err = ioutil.ReadAll(r.Body); err != nil || len(message) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	id, err = s.service.ProcessMessage(r.Context(), message)
-	if err == service.ErrSavingToRepository {
-		w.WriteHeader(http.StatusProcessing)
-		_, err = w.Write([]byte(fmt.Sprintf("{\"status\":\"temporaly problem to save\",\"msg_id\":%s}", id)))
-
-		if err != nil {
-			slog.Error(err.Error())
-		}
-		return
-	}
-
-	w.WriteHeader(http.StatusProcessing)
-	_, err = w.Write([]byte(fmt.Sprintf("{\"status\":\"saved, sent to the broker...\",\"msg_id\":%s}", id)))
-	if err != nil {
-		slog.Error(err.Error())
-	}
-
-}
-
-// Statistic возвращает статистику пришедших/отправленных на временное хранение сообщений.
-func (s *Server) Statistic(w http.ResponseWriter, r *http.Request) {
-	if !allowedOnlyMethod(http.MethodGet, w, r) {
-		return
-	}
-
-	statistic := s.service.Statistic()
-	jsonData, err := json.Marshal(statistic)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		slog.Error(err.Error())
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonData)
-	if err != nil {
-		slog.Error(err.Error())
-	}
 }
 
 // MustRun производит запуск сервера в отдельной go-рутине. В случае ошибки останавливает работу приложения.
@@ -121,17 +66,4 @@ func (s *Server) Shutdown() {
 	} else {
 		slog.Info("gracefully shut down http server")
 	}
-}
-
-// allowedOnlyMethod принимает разрешенный метод и, если запрос ему не соответствует, записывает в заголовок информацию
-// о разрешенном методе, статус http.StatusMethodNotAllowed и возвращает false.
-func allowedOnlyMethod(method string, w http.ResponseWriter, r *http.Request) bool {
-	if r.Method != method {
-		w.Header().Set("Allow", method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		slog.Default().With("remote address", r.RemoteAddr).With("request url", r.RequestURI).Warn("method not allowed")
-		return false
-	}
-
-	return true
 }

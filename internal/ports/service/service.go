@@ -13,4 +13,5 @@ type Interface interface {
 	MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) error
 	MessageChan() chan dto.MessageID
 	SaveUnsentMessage(dto.MessageID) error
+	Statistic() dto.Statistic
 }

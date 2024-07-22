@@ -8,10 +8,13 @@ import (
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/recoverer"
 	"github.com/lazylex/messaggio/internal/adapters/http/router"
 	"github.com/lazylex/messaggio/internal/config"
+	"github.com/lazylex/messaggio/internal/helpers/constants/prefixes"
 	"github.com/lazylex/messaggio/internal/service"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
 	"os"
+	"time"
 )
 
 // Server структура для обработки http-запросов к приложению.
@@ -38,6 +41,18 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer, env strin
 		ReadTimeout:  server.cfg.ReadTimeout,
 		WriteTimeout: server.cfg.WriteTimeout,
 		IdleTimeout:  server.cfg.IdleTimeout,
+	}
+
+	if cfg.EnableProfiler {
+		if cfg.WriteTimeout <= time.Second*30 {
+			slog.Warn("standard profile duration exceeds server's WriteTimeout")
+		}
+
+		router.AssignPathToHandler(prefixes.PPROFPrefix, server.mux, pprof.Index)
+		router.AssignPathToHandler(prefixes.PPROFPrefix+"cmdline", server.mux, pprof.Cmdline)
+		router.AssignPathToHandler(prefixes.PPROFPrefix+"profile", server.mux, pprof.Profile)
+		router.AssignPathToHandler(prefixes.PPROFPrefix+"symbol", server.mux, pprof.Symbol)
+		router.AssignPathToHandler(prefixes.PPROFPrefix+"trace", server.mux, pprof.Trace)
 	}
 
 	if env != config.EnvironmentLocal {

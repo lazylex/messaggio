@@ -20,6 +20,10 @@ Package config: пакет содержит объявления всех стр
 
 6. Service - конфигурация сервисной логики
 
+7. Redis - конфигурация redis-сервера
+
+8. Prometheus - конфигурация метрик
+
 */
 
 package config
@@ -44,6 +48,7 @@ type Config struct {
 	HttpServer        `yaml:"http_server"`
 	Service           `yaml:"service"`
 	Prometheus        `yaml:"prometheus"`
+	Redis             `yaml:"redis"`
 	Instance          string `yaml:"instance" env-required:"true"`
 	Env               string `yaml:"env" env:"ENV" env-required:"true"`
 }
@@ -82,6 +87,13 @@ type HttpServer struct {
 type Prometheus struct {
 	PrometheusPort       string `yaml:"prometheus_port" env:"PROMETHEUS_PORT"`
 	PrometheusMetricsURL string `yaml:"prometheus_metrics_url" env:"PROMETHEUS_METRICS_URL"`
+}
+
+type Redis struct {
+	RedisAddress  string `yaml:"redis_address" env:"REDIS_ADDRESS" env-required:"true"`
+	RedisUser     string `yaml:"redis_user" env:"REDIS_USER"`
+	RedisPassword string `yaml:"redis_password" env:"REDIS_PWD"`
+	RedisDB       int    `yaml:"redis_db" env:"REDIS_DB"`
 }
 
 type Service struct {

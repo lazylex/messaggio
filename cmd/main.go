@@ -7,7 +7,8 @@ import (
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/logger"
 	prometheusMetrics "github.com/lazylex/messaggio/internal/metrics"
-	"github.com/lazylex/messaggio/internal/outbox/naive_implementation/record_outbox"
+	"github.com/lazylex/messaggio/internal/outbox/redis_outbox"
+	"github.com/redis/go-redis/v9"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -26,8 +27,12 @@ func main() {
 
 	repo := postgresql.MustCreate(cfg.PersistentStorage)
 
-	brokerOutbox := record_outbox.New("brokerOutbox")
-	repoOutbox := record_outbox.New("repoOutbox")
+	// TODO сделать использование наивной реализации outbox'а при отсутствии конфигурации Redis
+
+	redisClient := redis.NewClient(
+		&redis.Options{Addr: cfg.RedisAddress, Username: cfg.RedisUser, Password: cfg.RedisPassword, DB: cfg.RedisDB})
+	brokerOutbox := redis_outbox.MustCreate(redisClient, "brokerOutbox", cfg.Instance)
+	repoOutbox := redis_outbox.MustCreate(redisClient, "repoOutbox", cfg.Instance)
 
 	metrics := prometheusMetrics.MustCreate(&cfg.Prometheus)
 

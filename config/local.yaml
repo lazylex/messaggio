@@ -26,3 +26,8 @@ http_server:
   secure_key: "В локальном окружении секретный ключ не используется"
 service:
   retry_timeout: 5s
+redis:
+  redis_address: "127.0.0.0:6379"
+  redis_user: ""
+  redis_password: ""
+  redis_db: 0

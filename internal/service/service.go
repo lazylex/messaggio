@@ -7,7 +7,6 @@ import (
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
 	"github.com/lazylex/messaggio/internal/dto"
-	ido "github.com/lazylex/messaggio/internal/ports/id_outbox"
 	"github.com/lazylex/messaggio/internal/ports/metrics/service"
 	reo "github.com/lazylex/messaggio/internal/ports/record_outbox"
 	"github.com/lazylex/messaggio/internal/ports/repository"
@@ -40,9 +39,9 @@ type outbox struct {
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
-func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOutbox, repoOutbox reo.Interface,
+func MustCreate(repo repository.Interface, brokerOutbox, repoOutbox reo.Interface,
 	cfg config.Service, metrics service.MetricsInterface) *Service {
-	if repo == nil || repoOutbox == nil || statusOutbox == nil || metrics == nil {
+	if repo == nil || repoOutbox == nil || metrics == nil {
 		slog.Error("nil pointer in function parameters")
 		os.Exit(1)
 	}

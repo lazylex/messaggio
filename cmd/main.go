@@ -7,7 +7,6 @@ import (
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/logger"
 	prometheusMetrics "github.com/lazylex/messaggio/internal/metrics"
-	"github.com/lazylex/messaggio/internal/outbox/naive_implementation/id_outbox"
 	"github.com/lazylex/messaggio/internal/outbox/naive_implementation/record_outbox"
 	"log/slog"
 	"os"
@@ -26,13 +25,13 @@ func main() {
 	clearScreen()
 
 	repo := postgresql.MustCreate(cfg.PersistentStorage)
-	statusOutbox := id_outbox.New("statusOutbox")
+
 	brokerOutbox := record_outbox.New("brokerOutbox")
 	repoOutbox := record_outbox.New("repoOutbox")
 
 	metrics := prometheusMetrics.MustCreate(&cfg.Prometheus)
 
-	domainService := service.MustCreate(repo, statusOutbox, brokerOutbox, repoOutbox, cfg.Service, metrics.Service)
+	domainService := service.MustCreate(repo, brokerOutbox, repoOutbox, cfg.Service, metrics.Service)
 	kafka.MustRun(cfg.Kafka, domainService, cfg.Instance)
 	httpServer := server.MustCreate(domainService, cfg.HttpServer, cfg.Env, metrics.HTTP)
 	httpServer.MustRun()

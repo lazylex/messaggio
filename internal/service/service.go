@@ -8,6 +8,7 @@ import (
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
 	"github.com/lazylex/messaggio/internal/dto"
 	ido "github.com/lazylex/messaggio/internal/ports/id_outbox"
+	"github.com/lazylex/messaggio/internal/ports/metrics/service"
 	reo "github.com/lazylex/messaggio/internal/ports/record_outbox"
 	"github.com/lazylex/messaggio/internal/ports/repository"
 	"log/slog"
@@ -23,13 +24,14 @@ var (
 )
 
 type Service struct {
-	repo                       repository.Interface // Объект для взаимодействия с БД
-	messageChan                chan dto.MessageID   // Канал для отправки сообщений
-	outbox                     outbox               // Хранилище неотправленных данных
-	total                      atomic.Uint64        // Всего пришло сообщений на обработку
-	messagesSentToOutbox       atomic.Uint64        // Всего сохранено сообщений в outbox
-	messagesReturnedFromOutbox atomic.Uint64        // Всего удалось переместить сообщений из outbox в БД
-	canRetrySendToBroker       atomic.Bool          // Флаг, означающий, что запись в канал для отправки сообщений в kafka прошла успешно и есть смысл запускать go-рутину для последующих попыток отправки
+	repo                       repository.Interface     // Объект для взаимодействия с БД
+	messageChan                chan dto.MessageID       // Канал для отправки сообщений
+	outbox                     outbox                   // Хранилище неотправленных данных
+	total                      atomic.Uint64            // Всего пришло сообщений на обработку
+	messagesSentToOutbox       atomic.Uint64            // Всего сохранено сообщений в outbox
+	messagesReturnedFromOutbox atomic.Uint64            // Всего удалось переместить сообщений из outbox в БД
+	canRetrySendToBroker       atomic.Bool              // Флаг, означающий, что запись в канал для отправки сообщений в kafka прошла успешно и есть смысл запускать go-рутину для последующих попыток отправки
+	metrics                    service.MetricsInterface // Метрики Prometheus
 }
 
 type outbox struct {
@@ -38,8 +40,9 @@ type outbox struct {
 }
 
 // MustCreate возвращает структуры для работы с сервисной логикой.
-func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOutbox, repoOutbox reo.Interface, cfg config.Service) *Service {
-	if repo == nil || repoOutbox == nil || statusOutbox == nil {
+func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOutbox, repoOutbox reo.Interface,
+	cfg config.Service, metrics service.MetricsInterface) *Service {
+	if repo == nil || repoOutbox == nil || statusOutbox == nil || metrics == nil {
 		slog.Error("nil pointer in function parameters")
 		os.Exit(1)
 	}
@@ -47,8 +50,10 @@ func MustCreate(repo repository.Interface, statusOutbox ido.Interface, brokerOut
 	messageChan := make(chan dto.MessageID)
 
 	s := &Service{messageChan: messageChan,
-		outbox: outbox{repoRecord: repoOutbox, brokerRecord: brokerOutbox},
-		repo:   repo}
+		outbox:  outbox{repoRecord: repoOutbox, brokerRecord: brokerOutbox},
+		repo:    repo,
+		metrics: metrics,
+	}
 
 	s.canRetrySendToBroker.Store(true)
 	go func() {
@@ -72,10 +77,12 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 	id := uuid.New()
 	data := dto.MessageID{Message: msg, ID: id}
 
+	s.metrics.IncomingMsgInc()
 	s.total.Add(1)
 
 	if err = s.saveMessage(ctx, data); err != nil {
 		defer func() {
+			s.metrics.ProblemsSavingInDB()
 			if err := s.outbox.repoRecord.Add(data); err != nil {
 				slog.Error(err.Error())
 				return
@@ -104,6 +111,7 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 // MarkMessageAsProcessed меняет статус в БД у сообщения на "Processed".
 func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) error {
 	if s.repo.UpdateStatus(ctx, id) == nil {
+		s.metrics.ProcessedMsgInc()
 		return nil
 	}
 

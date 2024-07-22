@@ -1,8 +1,8 @@
 package metrics
 
 import (
-	"github.com/lazylex/watch-store-store/internal/adapters/rest/router"
-	"github.com/lazylex/watch-store-store/internal/helpers/constants/various"
+	"github.com/lazylex/messaggio/internal/adapters/http/router"
+	"github.com/lazylex/messaggio/internal/helpers/constants/various"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

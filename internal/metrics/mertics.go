@@ -3,9 +3,10 @@ package metrics
 import (
 	"errors"
 	"fmt"
-	"github.com/lazylex/watch-store/secure/internal/config"
-	httpMetrics "github.com/lazylex/watch-store/secure/internal/ports/metrics/http"
-	"github.com/lazylex/watch-store/secure/internal/ports/metrics/service"
+	"github.com/lazylex/messaggio/internal/config"
+
+	httpMetrics "github.com/lazylex/messaggio/internal/ports/metrics/http"
+	"github.com/lazylex/messaggio/internal/ports/metrics/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log/slog"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	NAMESPACE = "secure"
+	NAMESPACE = "messaggio"
 	PATH      = "path"
 )
 
@@ -52,7 +53,7 @@ func MustCreate(cfg *config.Prometheus) *Metrics {
 // registerMetrics заносит метрики в регистр и возвращает их. При неудаче возвращает ошибку.
 func registerMetrics() (*Metrics, error) {
 	var err error
-	var loginMetric, authErrMetric, logoutMetric, requests *prometheus.CounterVec
+	var incomingMsgMetric, processedMetric, problemsSavingMetric, requests *prometheus.CounterVec
 	var requestDuration *prometheus.HistogramVec
 
 	if requests, err = createHTTPRequestsTotalMetric(); err != nil {
@@ -63,21 +64,21 @@ func registerMetrics() (*Metrics, error) {
 		return nil, err
 	}
 
-	if loginMetric, err = createLoginTotalMetric(); err != nil {
+	if incomingMsgMetric, err = createIncomingMsgTotalMetric(); err != nil {
 		return nil, err
 	}
 
-	if logoutMetric, err = createLogoutTotalMetric(); err != nil {
+	if processedMetric, err = createProcessedMsgTotalMetric(); err != nil {
 		return nil, err
 	}
 
-	if authErrMetric, err = createAuthenticationErrorTotalMetric(); err != nil {
+	if problemsSavingMetric, err = createProblemsSavingInDBTotalMetric(); err != nil {
 		return nil, err
 	}
 
 	return &Metrics{
 		&HTTP{requests: requests, duration: requestDuration},
-		&Service{loginMetric, logoutMetric, authErrMetric},
+		&Service{incomingMsgMetric, processedMetric, problemsSavingMetric},
 	}, nil
 }
 

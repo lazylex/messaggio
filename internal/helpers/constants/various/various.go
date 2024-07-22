@@ -1,5 +1,6 @@
 package various
 
 const (
-	Origin = "origin"
+	Origin          = "origin"
+	NonExistentPath = "non-existent"
 )

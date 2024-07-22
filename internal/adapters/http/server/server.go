@@ -6,9 +6,11 @@ import (
 	"github.com/lazylex/messaggio/internal/adapters/http/handlers"
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/jwt"
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/recoverer"
+	requestMetrics "github.com/lazylex/messaggio/internal/adapters/http/middleware/request_metrics"
 	"github.com/lazylex/messaggio/internal/adapters/http/router"
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/helpers/constants/prefixes"
+	mi "github.com/lazylex/messaggio/internal/ports/metrics/http"
 	"github.com/lazylex/messaggio/internal/service"
 	"log/slog"
 	"net/http"
@@ -26,7 +28,7 @@ type Server struct {
 }
 
 // MustCreate создает и возвращает http-сервер.
-func MustCreate(domainService *service.Service, cfg config.HttpServer, env string) *Server {
+func MustCreate(domainService *service.Service, cfg config.HttpServer, env string, metrics mi.MetricsInterface) *Server {
 	mux := http.NewServeMux()
 	server := &Server{mux: mux, service: domainService, cfg: &cfg}
 
@@ -60,7 +62,10 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer, env strin
 		server.srv.Handler = tokenMiddleware.CheckJWT(server.mux)
 	}
 
+	metricsMiddleware := requestMetrics.New(metrics)
 	server.srv.Handler = recoverer.Recoverer(server.srv.Handler)
+	server.srv.Handler = metricsMiddleware.BeforeHandle(server.srv.Handler)
+	server.srv.Handler = metricsMiddleware.AfterHandle(server.srv.Handler)
 
 	return server
 }

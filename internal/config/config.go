@@ -75,6 +75,7 @@ type HttpServer struct {
 	ShutdownTimeout time.Duration `yaml:"shutdown_timeout" env:"SHUTDOWN_TIMEOUT" env-required:"true"`
 	RequestTimeout  time.Duration `yaml:"request_timeout" env:"REQUEST_TIMEOUT" env-required:"true"`
 	EnableProfiler  bool          `yaml:"enable_profiler" env:"ENABLE_PROFILER"`
+	SecureKey       string        `yaml:"secure_key" env:"SECURE_KEY" env-required:"true"`
 }
 
 type Service struct {

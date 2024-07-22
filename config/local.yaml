@@ -23,5 +23,6 @@ http_server:
   shutdown_timeout: 15s
   request_timeout: 50s
   enable_profiler: true
+  secure_key: "В локальном окружении секретный ключ не используется"
 service:
   retry_timeout: 5s

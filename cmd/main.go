@@ -30,7 +30,7 @@ func main() {
 	repoOutbox := record_outbox.New("repoOutbox")
 	domainService := service.MustCreate(repo, statusOutbox, brokerOutbox, repoOutbox, cfg.Service)
 	kafka.MustRun(cfg.Kafka, domainService, cfg.Instance)
-	httpServer := server.MustCreate(domainService, cfg.HttpServer)
+	httpServer := server.MustCreate(domainService, cfg.HttpServer, cfg.Env)
 	httpServer.MustRun()
 
 	c := make(chan os.Signal, 1)

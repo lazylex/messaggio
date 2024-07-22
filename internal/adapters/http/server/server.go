@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/lazylex/messaggio/internal/adapters/http/handlers"
+	"github.com/lazylex/messaggio/internal/adapters/http/middleware/jwt"
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/recoverer"
 	"github.com/lazylex/messaggio/internal/adapters/http/router"
 	"github.com/lazylex/messaggio/internal/config"
@@ -22,7 +23,7 @@ type Server struct {
 }
 
 // MustCreate создает и возвращает http-сервер.
-func MustCreate(domainService *service.Service, cfg config.HttpServer) *Server {
+func MustCreate(domainService *service.Service, cfg config.HttpServer, env string) *Server {
 	mux := http.NewServeMux()
 	server := &Server{mux: mux, service: domainService, cfg: &cfg}
 
@@ -37,6 +38,11 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer) *Server {
 		ReadTimeout:  server.cfg.ReadTimeout,
 		WriteTimeout: server.cfg.WriteTimeout,
 		IdleTimeout:  server.cfg.IdleTimeout,
+	}
+
+	if env != config.EnvironmentLocal {
+		tokenMiddleware := jwt.New([]byte(cfg.SecureKey))
+		server.srv.Handler = tokenMiddleware.CheckJWT(server.mux)
 	}
 
 	server.srv.Handler = recoverer.Recoverer(server.srv.Handler)

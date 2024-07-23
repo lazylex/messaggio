@@ -94,7 +94,7 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 	}
 
 	go func() {
-		if s.outbox.brokerRecord.Len() > 0 {
+		if !s.outbox.brokerRecord.IsEmpty() {
 			if err = s.outbox.brokerRecord.Add(data); err != nil {
 				slog.Error(err.Error())
 			}
@@ -128,7 +128,7 @@ func (s *Service) trySaveMessageAgain() {
 	var err error
 	ctx := context.Background()
 
-	if s.outbox.repoRecord.Len() == 0 {
+	if s.outbox.repoRecord.IsEmpty() {
 		return
 	}
 
@@ -147,7 +147,7 @@ func (s *Service) trySaveMessageAgain() {
 // trySendToBrokerAgain рекурсивно пытается отправить в брокер не отправленное ранее сообщение. Попытки осуществляются
 // пока outbox содержит элементы.
 func (s *Service) trySendToBrokerAgain() {
-	if s.outbox.brokerRecord.Len() == 0 {
+	if s.outbox.brokerRecord.IsEmpty() {
 		return
 	}
 

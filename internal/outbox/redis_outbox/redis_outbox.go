@@ -62,14 +62,9 @@ func (ro *RedisOutbox) Pop() dto.MessageID {
 	return dto.MessageID{ID: id, Message: message.Message(data[0])}
 }
 
-// Len возвращает длину списка.
-func (ro *RedisOutbox) Len() int {
-	result, err := ro.client.LLen(context.Background(), ro.key()).Result()
-	if err != nil {
-		return 0
-	}
-
-	return int(result)
+// IsEmpty возвращает true, если outbox пуст.
+func (ro *RedisOutbox) IsEmpty() bool {
+	return ro.client.LLen(context.Background(), ro.key()).Val() == 0
 }
 
 // key возвращает ключ, по которому в Redis будут сохраняться данные в списке.

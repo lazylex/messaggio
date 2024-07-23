@@ -57,9 +57,9 @@ func (n *Naive) Pop() dto.MessageID {
 	return result
 }
 
-// Len возвращает количество элементов в хранилище.
-func (n *Naive) Len() int {
+// IsEmpty возвращает true, если outbox пуст.
+func (n *Naive) IsEmpty() bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	return len(n.data)
+	return len(n.data) == 0
 }

@@ -48,18 +48,18 @@ func (mr *MockInterfaceMockRecorder) Add(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockInterface)(nil).Add), arg0)
 }
 
-// Len mocks base method.
-func (m *MockInterface) Len() int {
+// IsEmpty mocks base method.
+func (m *MockInterface) IsEmpty() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Len")
-	ret0, _ := ret[0].(int)
+	ret := m.ctrl.Call(m, "IsEmpty")
+	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// Len indicates an expected call of Len.
-func (mr *MockInterfaceMockRecorder) Len() *gomock.Call {
+// IsEmpty indicates an expected call of IsEmpty.
+func (mr *MockInterfaceMockRecorder) IsEmpty() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockInterface)(nil).Len))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockInterface)(nil).IsEmpty))
 }
 
 // Pop mocks base method.

@@ -24,6 +24,8 @@ Package config: пакет содержит объявления всех стр
 
 8. Prometheus - конфигурация метрик
 
+9. Outbox - используемый для хранения не сохраненных данных метод - Naive (простое сохранение в память) или Redis (в списке Redis)
+
 */
 
 package config
@@ -49,6 +51,7 @@ type Config struct {
 	Service           `yaml:"service"`
 	Prometheus        `yaml:"prometheus"`
 	Redis             `yaml:"redis"`
+	Outbox            string `yaml:"outbox" env-required:"true"`
 	Instance          string `yaml:"instance" env-required:"true"`
 	Env               string `yaml:"env" env:"ENV" env-required:"true"`
 }
@@ -90,7 +93,7 @@ type Prometheus struct {
 }
 
 type Redis struct {
-	RedisAddress  string `yaml:"redis_address" env:"REDIS_ADDRESS" env-required:"true"`
+	RedisAddress  string `yaml:"redis_address" env:"REDIS_ADDRESS"`
 	RedisUser     string `yaml:"redis_user" env:"REDIS_USER"`
 	RedisPassword string `yaml:"redis_password" env:"REDIS_PWD"`
 	RedisDB       int    `yaml:"redis_db" env:"REDIS_DB"`

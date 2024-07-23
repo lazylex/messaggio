@@ -1,5 +1,6 @@
 instance: "8f119105-415f-4606-811a-17ca413eccbc"
 env: "local"
+outbox: "Redis"
 kafka:
   kafka_brokers: ["localhost:9092"]
   kafka_message_topic: "message-topic"

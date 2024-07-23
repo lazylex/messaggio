@@ -5,9 +5,12 @@ import (
 	"github.com/lazylex/messaggio/internal/adapters/http/server"
 	"github.com/lazylex/messaggio/internal/adapters/kafka"
 	"github.com/lazylex/messaggio/internal/config"
+	"github.com/lazylex/messaggio/internal/helpers/constants/various"
 	"github.com/lazylex/messaggio/internal/logger"
 	prometheusMetrics "github.com/lazylex/messaggio/internal/metrics"
+	naiveOutbox "github.com/lazylex/messaggio/internal/outbox/naive_implementation/record_outbox"
 	"github.com/lazylex/messaggio/internal/outbox/redis_outbox"
+	"github.com/lazylex/messaggio/internal/ports/record_outbox"
 	"github.com/redis/go-redis/v9"
 	"log/slog"
 	"os"
@@ -26,13 +29,7 @@ func main() {
 	clearScreen()
 
 	repo := postgresql.MustCreate(cfg.PersistentStorage)
-
-	// TODO сделать использование наивной реализации outbox'а при отсутствии конфигурации Redis
-
-	redisClient := redis.NewClient(
-		&redis.Options{Addr: cfg.RedisAddress, Username: cfg.RedisUser, Password: cfg.RedisPassword, DB: cfg.RedisDB})
-	brokerOutbox := redis_outbox.MustCreate(redisClient, "brokerOutbox", cfg.Instance)
-	repoOutbox := redis_outbox.MustCreate(redisClient, "repoOutbox", cfg.Instance)
+	brokerOutbox, repoOutbox := MustCreateOutboxes(cfg)
 
 	metrics := prometheusMetrics.MustCreate(&cfg.Prometheus)
 
@@ -63,4 +60,30 @@ func clearScreen() {
 		cmd.Stdout = os.Stdout
 		_ = cmd.Run()
 	}
+}
+
+// MustCreateOutboxes возвращает outbox'ы для временного сохранения сообщений, не отправленных в Kafka и в СУБД. При
+// неверно заданной конфигурации (указан несуществующий outbox и т.п.) выдает ошибку в лог и прекращает работу
+// приложения.
+func MustCreateOutboxes(cfg *config.Config) (brokerOutbox, repoOutbox record_outbox.Interface) {
+	switch cfg.Outbox {
+	case various.Redis:
+		if len(cfg.RedisAddress) == 0 {
+			slog.Error("Redis address is empty")
+			os.Exit(1)
+		}
+
+		redisClient := redis.NewClient(
+			&redis.Options{Addr: cfg.RedisAddress, Username: cfg.RedisUser, Password: cfg.RedisPassword, DB: cfg.RedisDB})
+		brokerOutbox = redis_outbox.MustCreate(redisClient, "brokerOutbox", cfg.Instance)
+		repoOutbox = redis_outbox.MustCreate(redisClient, "repoOutbox", cfg.Instance)
+	case various.Naive:
+		brokerOutbox = naiveOutbox.New("brokerOutbox")
+		repoOutbox = naiveOutbox.New("repoOutbox")
+	default:
+		slog.Error("Outbox not set")
+		os.Exit(1)
+	}
+
+	return
 }

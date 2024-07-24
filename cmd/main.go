@@ -78,8 +78,8 @@ func MustCreateOutboxes(cfg *config.Config) (brokerOutbox, repoOutbox record_out
 		brokerOutbox = redis_outbox.MustCreate(redisClient, "brokerOutbox", cfg.Instance)
 		repoOutbox = redis_outbox.MustCreate(redisClient, "repoOutbox", cfg.Instance)
 	case various.Naive:
-		brokerOutbox = naiveOutbox.New("brokerOutbox")
-		repoOutbox = naiveOutbox.New("repoOutbox")
+		brokerOutbox = naiveOutbox.New()
+		repoOutbox = naiveOutbox.New()
 	default:
 		slog.Error("Outbox not set")
 		os.Exit(1)

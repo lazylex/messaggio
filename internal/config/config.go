@@ -77,7 +77,7 @@ type PersistentStorage struct {
 }
 
 type HttpServer struct {
-	Address         string        `yaml:"address" env:"ADDRESS" env-required:"true"`
+	HttpPort        string        `yaml:"http_port" env:"HTTP_PORT" env-required:"true"`
 	ReadTimeout     time.Duration `yaml:"read_timeout" env:"READ_TIMEOUT" env-required:"true"`
 	WriteTimeout    time.Duration `yaml:"write_timeout" env:"WRITE_TIMEOUT" env-required:"true"`
 	IdleTimeout     time.Duration `yaml:"idle_timeout" env:"IDLE_TIMEOUT" env-required:"true"`

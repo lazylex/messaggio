@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/lazylex/messaggio/internal/adapters/http/handlers"
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/jwt"
 	"github.com/lazylex/messaggio/internal/adapters/http/middleware/recoverer"
@@ -38,7 +39,7 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer, env strin
 	router.AssignPathToHandler("/statistic", server.mux, h.Statistic)
 
 	server.srv = &http.Server{
-		Addr:         server.cfg.Address,
+		Addr:         fmt.Sprintf("0.0.0.0:%v", server.cfg.HttpPort),
 		Handler:      server.mux,
 		ReadTimeout:  server.cfg.ReadTimeout,
 		WriteTimeout: server.cfg.WriteTimeout,

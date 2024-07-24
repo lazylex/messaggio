@@ -1,0 +1,33 @@
+instance: "3b62863f-3b22-4fb1-a471-e32a631a4858"
+env: "production"
+outbox: "Redis"
+kafka:
+  kafka_brokers: ["localhost:9092"]
+  kafka_message_topic: "message-topic"
+  kafka_confirm_topic: "confirm-status-topic"
+  kafka_write_timeout: 10s
+  kafka_time_between_attempts: 250ms
+persistent_storage:
+  database_login: "" # Опасно хранить в репозитории
+  database_password: "" # Опасно хранить в репозитории
+  database_address: "" # Опасно хранить в репозитории
+  database_port: 5432
+  database_max_open_connections: 10
+  database_name: "messaggio"
+  query_timeout: 5s
+http_server:
+  address: "8897"
+  read_timeout: 5s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 15s
+  request_timeout: 50s
+  enable_profiler: true
+  secure_key: "" # Опасно хранить в репозитории
+service:
+  retry_timeout: 5s
+redis:
+  redis_address: "0.0.0.0:6379"
+  redis_user: "" # Опасно хранить в репозитории
+  redis_password: "" # Опасно хранить в репозитории
+  redis_db: 0

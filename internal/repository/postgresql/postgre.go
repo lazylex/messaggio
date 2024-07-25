@@ -111,9 +111,21 @@ func (p *PostgreSQL) createNotExistedSchemaAndTables() error {
 	END;
 	$$ language 'plpgsql';
 	
-	CREATE TRIGGER update_messages_modtime
-		BEFORE UPDATE ON messages
-		FOR EACH ROW EXECUTE FUNCTION update_modified_column();`
+	DO
+	$$
+	BEGIN
+		IF NOT EXISTS(SELECT *
+							 FROM information_schema.triggers
+							 WHERE event_object_table = 'messages'
+							 AND trigger_name = 'update_messages_modtime'
+							 )
+		THEN
+			CREATE TRIGGER update_messages_modtime
+			BEFORE UPDATE ON messages
+			FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+		END IF ;
+	END;
+	$$;`
 
 	if _, err := p.pool.Exec(stmt); err != nil {
 		return err

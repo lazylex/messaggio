@@ -15,4 +15,5 @@ var (
 type Interface interface {
 	SaveMessage(ctx context.Context, data dto.MessageID) error
 	UpdateStatus(ctx context.Context, id uuid.UUID) error
+	ProcessedCount(ctx context.Context) (dto.Processed, error)
 }

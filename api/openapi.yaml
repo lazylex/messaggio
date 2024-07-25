@@ -55,6 +55,23 @@ paths:
                 $ref: '#/components/schemas/Statistic'
         '500':
           description: Внутренняя ошибка сервера
+  /processed-statistic:
+    get:
+      tags:
+        - messages
+      summary: Получение статистики по обработанным сообщениям
+      description: Возвращает JSON со статистикой по обработанным за последний час, день, неделю, месяц сообщениям
+      operationId: ProcessedStatistic
+      responses:
+        '200':
+          description: Успешное получение статистики
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessedStatistic'
+        '500':
+          description: Внутренняя ошибка сервера
+          
 components:
   schemas:
     StatusID:
@@ -88,4 +105,28 @@ components:
           type: integer
           description: Всего удалось переместить сообщений из outbox в БД
           example: 3
+          minimum: 0
+    ProcessedStatistic:
+      type: object
+      description: Статистика обработки сообщений
+      properties:
+        in_hour:
+          type: integer
+          description: Обработано сообщений за час
+          example: 15
+          minimum: 0
+        in_day:
+          type: integer
+          description: Обработано сообщений за день
+          example: 30
+          minimum: 0
+        in_week:
+          type: integer
+          description: Обработано сообщений за неделю
+          example: 9000
+          minimum: 0
+        in_month:
+          type: integer
+          description: Обработано сообщений за месяц
+          example: 2700000
           minimum: 0

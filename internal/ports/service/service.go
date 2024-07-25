@@ -14,4 +14,5 @@ type Interface interface {
 	MessageChan() chan dto.MessageID
 	SaveUnsentMessage(dto.MessageID) error
 	Statistic() dto.Statistic
+	ProcessedCountStatistic(ctx context.Context) (dto.Processed, error)
 }

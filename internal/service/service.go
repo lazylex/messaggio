@@ -175,6 +175,11 @@ func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 	return ErrSavingToRepository
 }
 
+// ProcessedCountStatistic возвращает статистику по обработанным сообщениям (за последний час, день, неделю, месяц).
+func (s *Service) ProcessedCountStatistic(ctx context.Context) (dto.Processed, error) {
+	return s.repo.ProcessedCount(ctx)
+}
+
 // Statistic возвращает статистику.
 func (s *Service) Statistic() dto.Statistic {
 	return dto.Statistic{

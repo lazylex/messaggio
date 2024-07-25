@@ -94,8 +94,8 @@ func (p *PostgreSQL) createNotExistedSchemaAndTables() error {
 		(	
 		    id UUID NOT NULL PRIMARY KEY,
 			message bytea NOT NULL,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    		updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),` +
+			created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
+    		updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),` +
 		fmt.Sprintf("status msg_status NOT NULL DEFAULT '%s')", status.InProcessing)
 
 	if _, err := p.pool.Exec(stmt); err != nil {
@@ -144,4 +144,33 @@ func (p *PostgreSQL) UpdateStatus(ctx context.Context, id uuid.UUID) error {
 	_, err := p.pool.ExecEx(ctx, stmt, nil, status.Processed, id)
 
 	return err
+}
+
+// ProcessedCount возвращает сумму обработанных сообщений за последний час, день, неделю, месяц.
+func (p *PostgreSQL) ProcessedCount(ctx context.Context) (dto.Processed, error) {
+	var (
+		result dto.Processed
+		rows   *pgx.Rows
+		err    error
+	)
+
+	stmt := `SELECT 
+    			COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '1 hours'),
+    			COUNT(*) FILTER (WHERE updated_at > CURRENT_DATE - INTERVAL '1 days'),
+    			COUNT(*) FILTER (WHERE updated_at > CURRENT_DATE - INTERVAL '1 weeks'),
+    			COUNT(*) FILTER (WHERE updated_at > CURRENT_DATE - INTERVAL '1 months')
+			FROM messages WHERE status = $1;`
+
+	rows, err = p.pool.QueryEx(ctx, stmt, nil, status.Processed)
+	if err != nil {
+		return dto.Processed{}, err
+	}
+
+	for rows.Next() {
+		if err = rows.Scan(&result.InHour, &result.InDay, &result.InWeek, &result.InMonth); err != nil {
+			return dto.Processed{}, err
+		}
+	}
+
+	return result, nil
 }

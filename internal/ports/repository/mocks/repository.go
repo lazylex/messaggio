@@ -36,6 +36,21 @@ func (m *MockInterface) EXPECT() *MockInterfaceMockRecorder {
 	return m.recorder
 }
 
+// ProcessedCount mocks base method.
+func (m *MockInterface) ProcessedCount(ctx context.Context) (dto.Processed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessedCount", ctx)
+	ret0, _ := ret[0].(dto.Processed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessedCount indicates an expected call of ProcessedCount.
+func (mr *MockInterfaceMockRecorder) ProcessedCount(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessedCount", reflect.TypeOf((*MockInterface)(nil).ProcessedCount), ctx)
+}
+
 // SaveMessage mocks base method.
 func (m *MockInterface) SaveMessage(ctx context.Context, data dto.MessageID) error {
 	m.ctrl.T.Helper()

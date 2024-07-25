@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/lazylex/messaggio/internal/dto"
 	srvc "github.com/lazylex/messaggio/internal/ports/service"
 	"github.com/lazylex/messaggio/internal/service"
 	"io/ioutil"
@@ -67,6 +68,39 @@ func (h *Handler) Statistic(w http.ResponseWriter, r *http.Request) {
 
 	statistic := h.service.Statistic()
 	jsonData, err := json.Marshal(statistic)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error(err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+}
+
+// ProcessedStatistic возвращает статистику по обработанным сообщениям за час, день, неделю, месяц.
+func (h *Handler) ProcessedStatistic(w http.ResponseWriter, r *http.Request) {
+	if !allowedOnlyMethod(http.MethodGet, w, r) {
+		return
+	}
+
+	var (
+		err       error
+		statistic dto.Processed
+		jsonData  []byte
+	)
+
+	statistic, err = h.service.ProcessedCountStatistic(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		slog.Error(err.Error())
+		return
+	}
+
+	jsonData, err = json.Marshal(statistic)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		slog.Error(err.Error())

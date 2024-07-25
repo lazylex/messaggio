@@ -80,6 +80,21 @@ func (mr *MockInterfaceMockRecorder) ProcessMessage(ctx, msg interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockInterface)(nil).ProcessMessage), ctx, msg)
 }
 
+// ProcessedCountStatistic mocks base method.
+func (m *MockInterface) ProcessedCountStatistic(ctx context.Context) (dto.Processed, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessedCountStatistic", ctx)
+	ret0, _ := ret[0].(dto.Processed)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessedCountStatistic indicates an expected call of ProcessedCountStatistic.
+func (mr *MockInterfaceMockRecorder) ProcessedCountStatistic(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessedCountStatistic", reflect.TypeOf((*MockInterface)(nil).ProcessedCountStatistic), ctx)
+}
+
 // SaveUnsentMessage mocks base method.
 func (m *MockInterface) SaveUnsentMessage(arg0 dto.MessageID) error {
 	m.ctrl.T.Helper()
@@ -92,4 +107,18 @@ func (m *MockInterface) SaveUnsentMessage(arg0 dto.MessageID) error {
 func (mr *MockInterfaceMockRecorder) SaveUnsentMessage(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveUnsentMessage", reflect.TypeOf((*MockInterface)(nil).SaveUnsentMessage), arg0)
+}
+
+// Statistic mocks base method.
+func (m *MockInterface) Statistic() dto.Statistic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Statistic")
+	ret0, _ := ret[0].(dto.Statistic)
+	return ret0
+}
+
+// Statistic indicates an expected call of Statistic.
+func (mr *MockInterfaceMockRecorder) Statistic() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistic", reflect.TypeOf((*MockInterface)(nil).Statistic))
 }

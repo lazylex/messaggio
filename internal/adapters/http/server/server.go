@@ -37,6 +37,7 @@ func MustCreate(domainService *service.Service, cfg config.HttpServer, env strin
 
 	router.AssignPathToHandler("/msg", server.mux, h.ProcessMessage)
 	router.AssignPathToHandler("/statistic", server.mux, h.Statistic)
+	router.AssignPathToHandler("/processed-statistic", server.mux, h.ProcessedStatistic)
 
 	server.srv = &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%v", server.cfg.HttpPort),

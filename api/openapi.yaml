@@ -35,6 +35,8 @@ paths:
                 $ref: '#/components/schemas/StatusID'
         '400':
           description: Ошибка чтения или пустое тело сообщения
+        '401':
+          description: Несанкционированный доступ
         '500':
           description: Внутренняя ошибка сервера
   /statistic:
@@ -53,6 +55,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Statistic'
+        '401':
+          description: Несанкционированный доступ
         '500':
           description: Внутренняя ошибка сервера
   /processed-statistic:
@@ -69,9 +73,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProcessedStatistic'
+        '401':
+          description: Несанкционированный доступ
         '500':
           description: Внутренняя ошибка сервера
-          
+
 components:
   schemas:
     StatusID:

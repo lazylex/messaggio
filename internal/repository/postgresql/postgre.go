@@ -93,8 +93,27 @@ func (p *PostgreSQL) createNotExistedSchemaAndTables() error {
 	CREATE TABLE IF NOT EXISTS messages 
 		(	
 		    id UUID NOT NULL PRIMARY KEY,
-			message bytea NOT NULL,` +
+			message bytea NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    		updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),` +
 		fmt.Sprintf("status msg_status NOT NULL DEFAULT '%s')", status.InProcessing)
+
+	if _, err := p.pool.Exec(stmt); err != nil {
+		return err
+	}
+
+	stmt = `
+	CREATE OR REPLACE FUNCTION update_modified_column()
+	RETURNS TRIGGER AS $$
+	BEGIN
+		NEW.updated_at = now();
+		RETURN NEW;
+	END;
+	$$ language 'plpgsql';
+	
+	CREATE TRIGGER update_messages_modtime
+		BEFORE UPDATE ON messages
+		FOR EACH ROW EXECUTE FUNCTION update_modified_column();`
 
 	if _, err := p.pool.Exec(stmt); err != nil {
 		return err

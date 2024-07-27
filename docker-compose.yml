@@ -1,0 +1,82 @@
+services:
+  app:
+    restart: always
+    container_name: app_container
+    build: ./
+    depends_on:
+      - postgres
+      - redis
+      - zookeeper
+      - kafka
+    environment:
+      DATABASE_LOGIN: lex
+      DATABASE_PASSWORD: python
+      DATABASE_ADDRESS: postgres_container
+      SECURE_KEY: none
+      REDIS_ADDRESS: redis_container:6379
+    ports:
+      - "8897:8897"
+      - "9323:9323"
+
+  postgres:
+    container_name: postgres_container
+    restart: unless-stopped
+    image: postgres:16.3
+    volumes:
+      - ./.data/postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: lex
+      POSTGRES_PASSWORD: python
+      POSTGRES_DB: messaggio
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U lex -d messaggio" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    restart: always
+    container_name: redis_container
+    image: redis/redis-stack-server:latest
+    volumes:
+      - ./.data/redis/data:/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    hostname: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+
+    depends_on:
+      - kafka
+      - zookeeper
+
+networks:
+  default:
+    name: "inside"

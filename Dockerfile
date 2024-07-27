@@ -14,7 +14,6 @@ ARG PROMETHEUS_PORT=9323
 # Порт HTTP сервера
 ARG HTTP_PORT=8897
 
-MAINTAINER "lazylex@mail.ru"
 LABEL authors="lex"
 
 WORKDIR /app

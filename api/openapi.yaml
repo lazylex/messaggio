@@ -13,6 +13,10 @@ servers:
 tags:
   - name: messages
     description: Работа с сообщениями
+
+security:
+  - JWT: []
+
 paths:
   /msg:
     post:
@@ -24,8 +28,9 @@ paths:
       requestBody:
         required: true
         content:
-          text/plain:
-            example: just simple message
+          application/octet-stream:
+            schema:
+              type: object
       responses:
         '102':
           description: Сообщение принято в сервисе
@@ -79,6 +84,12 @@ paths:
           description: Внутренняя ошибка сервера
 
 components:
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     StatusID:
       type: object
@@ -95,7 +106,7 @@ components:
           example: cb0e57e2-5050-4644-8ada-1dc23ef1f518
     Statistic:
       type: object
-      description: Статистика обработки сообщений
+      description: Статистика обработки сообщений с момента запуска приложения
       properties:
         total:
           type: integer

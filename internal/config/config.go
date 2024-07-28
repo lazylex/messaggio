@@ -32,7 +32,9 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/ilyakaznacheev/cleanenv"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -129,4 +131,18 @@ func MustLoad() *Config {
 	}
 
 	return &cfg
+}
+
+// ReadSecretsToEnv считывает Docker secrets из папки /run/secrets/ и заносит их в переменные окружения. В качестве
+// параметра функция принимает карту, где ключами служат названия переменных окружения, а значениями - названия файлов,
+// содержащих секреты, которые необходимо занести в эти переменные окружения.
+func ReadSecretsToEnv(secrets map[string]string) {
+	for envName, fileName := range secrets {
+		secret, err := ioutil.ReadFile(fmt.Sprintf("/run/secrets/%s", fileName))
+		if err != nil {
+			continue
+		}
+
+		_ = os.Setenv(envName, string(secret))
+	}
 }

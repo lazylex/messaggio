@@ -23,10 +23,14 @@ import (
 )
 
 func main() {
+	config.ReadSecretsToEnv(map[string]string{"SECURE_KEY": "secure-key", "DATABASE_PASSWORD": "db-pwd"})
 	cfg := config.MustLoad()
 
 	slog.SetDefault(logger.MustCreate(cfg.Env, cfg.Instance))
-	clearScreen()
+
+	if cfg.Env != config.EnvironmentProduction {
+		clearScreen()
+	}
 
 	repo := postgresql.MustCreate(cfg.PersistentStorage)
 	brokerOutbox, repoOutbox := MustCreateOutboxes(cfg)

@@ -10,13 +10,14 @@ services:
         condition: service_healthy
     environment:
       DATABASE_LOGIN: lex
-      DATABASE_PASSWORD: python
       DATABASE_ADDRESS: postgres_container
-      SECURE_KEY: none
       REDIS_ADDRESS: redis_container:6379
     ports:
       - "8897:8897"
       - "9323:9323"
+    secrets:
+      - secure-key
+      - db-pwd
 
   postgres:
     container_name: postgres_container
@@ -26,15 +27,17 @@ services:
       - ./.data/postgres/data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: lex
-      POSTGRES_PASSWORD: python
       POSTGRES_DB: messaggio
       PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-pwd
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U lex -d messaggio" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+    secrets:
+      - db-pwd
 
   redis:
     restart: always
@@ -89,3 +92,9 @@ services:
 networks:
   default:
     name: "inside"
+
+secrets:
+  secure-key:
+    file: /home/lex/projects/messaggio/.data/secrets/SECURE_KEY
+  db-pwd:
+    file: /home/lex/projects/messaggio/.data/secrets/POSTGRES_PASSWORD

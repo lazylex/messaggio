@@ -48,6 +48,7 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
+    user: "0:0"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -85,7 +86,7 @@ services:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
-      - AUTH_TYPE="LOGIN_FORM"
+      - AUTH_TYPE=LOGIN_FORM
       - SPRING_SECURITY_USER_NAME= # заполнить логин
       - SPRING_SECURITY_USER_PASSWORD= # заполнить пароль
     depends_on:
@@ -98,6 +99,6 @@ networks:
 
 secrets:
   secure-key:
-    file: /home/lex/projects/messaggio/.data/secrets/SECURE_KEY
+    file: ./.data/secrets/SECURE_KEY
   db-pwd:
-    file: /home/lex/projects/messaggio/.data/secrets/POSTGRES_PASSWORD
+    file: ./.data/secrets/POSTGRES_PASSWORD

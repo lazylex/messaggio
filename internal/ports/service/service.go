@@ -2,9 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
 	"github.com/lazylex/messaggio/internal/dto"
+)
+
+var (
+	ErrSavingToRepository       = errors.New("service: failed to save to repository")
+	ErrUpdateStatusInRepository = errors.New("service: failed to update status in repository")
+	ErrSavingToRepoRecordOutbox = errors.New("service: failed to save to repository record outbox")
 )
 
 //go:generate mockgen -source=service.go -destination=mocks/service.go

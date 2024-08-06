@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"github.com/google/uuid"
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/domain/value_objects/message"
@@ -10,16 +9,11 @@ import (
 	"github.com/lazylex/messaggio/internal/ports/metrics/service"
 	reo "github.com/lazylex/messaggio/internal/ports/record_outbox"
 	"github.com/lazylex/messaggio/internal/ports/repository"
+	srvc "github.com/lazylex/messaggio/internal/ports/service"
 	"log/slog"
 	"os"
 	"sync/atomic"
 	"time"
-)
-
-var (
-	ErrSavingToRepository       = errors.New("failed to save to repository")
-	ErrUpdateStatusInRepository = errors.New("failed to update status in repository")
-	ErrSavingToRepoRecordOutbox = errors.New("failed to save to repository record outbox")
 )
 
 type Service struct {
@@ -90,7 +84,7 @@ func (s *Service) ProcessMessage(ctx context.Context, msg message.Message) (uuid
 			s.messagesSentToOutbox.Add(1)
 		}()
 
-		return id, ErrSavingToRepository
+		return id, srvc.ErrSavingToRepository
 	}
 
 	go func() {
@@ -114,7 +108,7 @@ func (s *Service) MarkMessageAsProcessed(ctx context.Context, id uuid.UUID) erro
 		return nil
 	}
 
-	return ErrUpdateStatusInRepository
+	return srvc.ErrUpdateStatusInRepository
 }
 
 // SaveUnsentMessage сохраняет в outbox сообщение, которое не удалось отправить в брокер сообщений.
@@ -168,11 +162,11 @@ func (s *Service) saveMessage(ctx context.Context, data dto.MessageID) error {
 	}
 
 	if err = s.outbox.repoRecord.Add(data); err != nil {
-		slog.Error(ErrSavingToRepoRecordOutbox.Error())
+		slog.Error(srvc.ErrSavingToRepoRecordOutbox.Error())
 		return err
 	}
 
-	return ErrSavingToRepository
+	return srvc.ErrSavingToRepository
 }
 
 // ProcessedCountStatistic возвращает статистику по обработанным сообщениям (за последний час, день, неделю, месяц).

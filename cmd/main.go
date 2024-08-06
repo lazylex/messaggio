@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/lazylex/messaggio/internal/adapters/http/server"
+	"github.com/lazylex/messaggio/internal/adapters/http"
 	"github.com/lazylex/messaggio/internal/adapters/kafka"
 	"github.com/lazylex/messaggio/internal/config"
 	"github.com/lazylex/messaggio/internal/helpers/constants/various"
@@ -39,8 +39,11 @@ func main() {
 
 	domainService := service.MustCreate(repo, brokerOutbox, repoOutbox, cfg.Service, metrics.Service)
 	kafka.MustRun(cfg.Kafka, domainService, cfg.Instance)
-	httpServer := server.MustCreate(domainService, cfg.HttpServer, cfg.Env, metrics.HTTP)
-	httpServer.MustRun()
+
+	if err := http.StartServer(domainService, cfg); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -49,8 +52,6 @@ func main() {
 	sig := <-c
 	fmt.Println() // так красивее, если вывод логов производится в стандартный терминал
 	slog.Info(fmt.Sprintf("%s signal received. Shutdown started", sig))
-
-	httpServer.Shutdown()
 }
 
 func clearScreen() {

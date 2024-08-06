@@ -14,6 +14,7 @@ persistent_storage:
   database_name: "messaggio"
   query_timeout: 5s
 http_server:
+  http_host: 0.0.0.0
   http_port: 8897
   read_timeout: 5s
   write_timeout: 10s

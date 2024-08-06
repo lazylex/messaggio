@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/lazylex/messaggio/internal/config"
 
-	httpMetrics "github.com/lazylex/messaggio/internal/ports/metrics/http"
 	"github.com/lazylex/messaggio/internal/ports/metrics/service"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,7 +20,6 @@ const (
 
 // Metrics структура, содержащая объекты, реализующие интерфейсы для сбора метрик.
 type Metrics struct {
-	HTTP    httpMetrics.MetricsInterface
 	Service service.MetricsInterface
 }
 
@@ -53,16 +51,7 @@ func MustCreate(cfg *config.Prometheus) *Metrics {
 // registerMetrics заносит метрики в регистр и возвращает их. При неудаче возвращает ошибку.
 func registerMetrics() (*Metrics, error) {
 	var err error
-	var incomingMsgMetric, processedMetric, problemsSavingMetric, requests *prometheus.CounterVec
-	var requestDuration *prometheus.HistogramVec
-
-	if requests, err = createHTTPRequestsTotalMetric(); err != nil {
-		return nil, err
-	}
-
-	if requestDuration, err = createHTTPRequestDurationSecondsBucketMetric(); err != nil {
-		return nil, err
-	}
+	var incomingMsgMetric, processedMetric, problemsSavingMetric *prometheus.CounterVec
 
 	if incomingMsgMetric, err = createIncomingMsgTotalMetric(); err != nil {
 		return nil, err
@@ -77,7 +66,6 @@ func registerMetrics() (*Metrics, error) {
 	}
 
 	return &Metrics{
-		&HTTP{requests: requests, duration: requestDuration},
 		&Service{incomingMsgMetric, processedMetric, problemsSavingMetric},
 	}, nil
 }

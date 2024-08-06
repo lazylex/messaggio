@@ -40,10 +40,22 @@ paths:
                 $ref: '#/components/schemas/StatusID'
         '400':
           description: Ошибка чтения или пустое тело сообщения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
         '401':
           description: Несанкционированный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
         '500':
           description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
   /statistic:
     get:
       tags:
@@ -62,8 +74,16 @@ paths:
                 $ref: '#/components/schemas/Statistic'
         '401':
           description: Несанкционированный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
         '500':
           description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
   /processed-statistic:
     get:
       tags:
@@ -80,8 +100,16 @@ paths:
                 $ref: '#/components/schemas/ProcessedStatistic'
         '401':
           description: Несанкционированный доступ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
         '500':
           description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemReason'
 
 components:
   securitySchemes:
@@ -91,6 +119,14 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ProblemReason:
+      type: object
+      description: Описание возникшей при запросе проблемы
+      properties:
+        problem:
+          type: string
+          description: Описание проблемы
+          example: can't read message from body
     StatusID:
       type: object
       description: Статус и идентификатор сообщения

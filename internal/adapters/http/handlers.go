@@ -23,7 +23,7 @@ func (h *Handler) ProcessMessage(c *gin.Context) {
 	var message []byte
 	var err error
 	if message, err = ioutil.ReadAll(c.Request.Body); err != nil || len(message) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"problem_reason": "can't read message from body"})
+		c.JSON(http.StatusBadRequest, gin.H{"problem": "can't read message from body"})
 		return
 	}
 
